@@ -11,7 +11,7 @@ router.get('iframe', '/iframe', function (ctx: IContext) {
   const { query } = request;
   const filterArray = query && query.filter && query.filter.trim().split(',');
   ctx.response.body = {
-    attributes: stores.iframe.allAttibuteWithFilter(filterArray)
+    attributes: stores.model.allAttibuteWithFilter(filterArray)
   };
   ctx.response.status = 200;
 });

@@ -18,7 +18,14 @@ web 方式：
 > 如果你想要在 webpack 中 external 该库，可以使用以下配置：
 ```js
 {
-    externals: {"ide-iframe": "ideIFrame"}
+    externals: {
+        "ide-iframe": {
+            "commonjs": "ide-iframe",
+            "commonjs2": "ide-iframe",
+            "amd": "ide-iframe",
+            "root": "ideIFrame"
+        }
+    }
 }
 ```
 
@@ -33,7 +40,7 @@ git clone https://github.com/alibaba-paimai-frontend/ide-iframe.git
 npm install
 
 ## 安装 peerDependencies 依赖包
-npm install antd@3.x mobx@4.x mobx-react@5.x mobx-state-tree@3.x react@16.x react-dom@16.x
+npm install ide-lib-utils@0.x ide-lib-base-component@0.x ette@0.x ette-proxy@0.x ette-router@0.x antd@3.x mobx@4.x mobx-react@5.x mobx-react-lite@1.x mobx-state-tree@3.x react@16.x styled-components@4.x.x react-dom@16.x
 ```
 
 运行以下命令后，访问 demo 地址： http://localhost:9000
@@ -61,5 +68,3 @@ npm test
 ```shell
 npm run build && npm publish
 ```
-
-

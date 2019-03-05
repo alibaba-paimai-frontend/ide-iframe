@@ -1,9 +1,14 @@
 import styled from 'styled-components';
 
+import { IBaseStyledProps } from 'ide-lib-base-component';
+import { IIFrameProps } from './index';
+
+interface IStyledProps extends IIFrameProps, IBaseStyledProps { }
+
 export const StyledContainer = styled.div.attrs({
-  style: (props: any) => props.style || {} // 优先级会高一些，行内样式
+  style: (props: IStyledProps) => props.style || {} // 优先级会高一些，行内样式
 })`
   position: relative;
-  width: ${(props: React.CSSProperties) => props.width || '100%'};
-  height: ${(props: React.CSSProperties) => props.height || '100%'};
+  width: 100%;
+  height: 100%;
 `;

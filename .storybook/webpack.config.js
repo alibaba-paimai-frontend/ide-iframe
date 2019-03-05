@@ -5,7 +5,7 @@ module.exports = (baseConfig, env, defaultConfig) => {
   defaultConfig.module.rules.push({
     test: /\.(ts|tsx)$/,
     include: path.resolve(__dirname, '../src'),
-      use: [require.resolve('awesome-typescript-loader'), require.resolve("react-docgen-typescript-loader")]
+    use: [require.resolve('awesome-typescript-loader'), require.resolve("react-docgen-typescript-loader")]
   });
   defaultConfig.node = { fs: 'empty' }; // 防止 fs 报错
   defaultConfig.plugins.push(new TSDocgenPlugin());

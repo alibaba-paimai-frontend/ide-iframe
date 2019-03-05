@@ -8,7 +8,7 @@ function onLoad() {
 
 const props: IIFrameProps = {
   styles: {
-    container:{
+    container: {
       width: 800,
       height: 600
     }
@@ -16,6 +16,6 @@ const props: IIFrameProps = {
   url: 'https://www.baidu.com'
 };
 
-render(<IFrame {...props} onload={onLoad} />, document.getElementById(
+render(<IFrame {...props} onLoad={onLoad} />, document.getElementById(
   'example'
 ) as HTMLElement);

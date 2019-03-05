@@ -78,7 +78,7 @@ function updateCss() {
   style[cssKey] = cssValue;
   // 更新节点属性，返回更新后的数值
   client
-    .put(`/iframe/styles/${selectedTarget}`, { style: style })
+    .put(`/model/styles/${selectedTarget}`, { style: style })
     .then(res => {
       const { status, body } = res;
       if (status === 200) {
