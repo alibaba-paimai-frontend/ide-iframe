@@ -1,6 +1,6 @@
 {
   "name": "ide-iframe",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "ide iframe",
   "main": "dist/index.umd.js",
   "module": "dist/index.umd.js",
@@ -67,8 +67,7 @@
     "webpack-dev-server": "^3.1.10",
     "webpack-merge": "^4.1.4"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "peerDependencies": {
     "ide-lib-utils": "0.x",
     "ide-lib-base-component": "0.x",
