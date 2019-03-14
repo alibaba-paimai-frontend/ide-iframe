@@ -44,7 +44,7 @@ const EDITABLE_ATTRIBUTE = BASE_CONTROLLED_KEYS.concat([
   'allowFullScreen',
   'showFullScreenIcon',
   'url',
-  'styles',
+  'data',
   'allowEvents'
 ]);
 

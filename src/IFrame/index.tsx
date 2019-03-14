@@ -2,10 +2,19 @@ import React, { Component, useCallback, useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Icon } from 'antd';
 import { pick } from 'ide-lib-utils';
-import { based, Omit, OptionalProps, IBaseTheme, IBaseComponentProps, IStoresEnv, useIndectedEvents, extracSubEnv, IBaseStyles } from 'ide-lib-base-component';
+import {
+  based,
+  Omit,
+  OptionalProps,
+  IBaseTheme,
+  IBaseComponentProps,
+  IStoresEnv,
+  useInjectedEvents,
+  extracSubEnv,
+  IBaseStyles
+} from 'ide-lib-base-component';
 
-
-import { debugInteract, debugRender } from '../lib/debug';
+import { debugInteract, debugRender, debugIO, debugComp } from '../lib/debug';
 import { parseOrFalse } from '../lib/util';
 import { StyledContainer } from './styles';
 import { AppFactory } from './controller/index';
@@ -16,7 +25,6 @@ import { showConsole } from './solution';
 interface ISubComponents {
   // SchemaTreeComponent: React.ComponentType<OptionalSchemaTreeProps>;
 }
-
 
 /**
  * 定义在 iframe 中传输的数据格式
@@ -51,9 +59,9 @@ export interface IIFrameTheme extends IBaseTheme {
 
 export interface IIFrameProps extends IIFrameEvent, IBaseComponentProps {
   /**
-  * 是否允许全屏
-  * 默认值：true
-  */
+   * 是否允许全屏
+   * 默认值：true
+   */
   allowFullScreen?: boolean;
 
   /**
@@ -76,8 +84,12 @@ export interface IIFrameProps extends IIFrameEvent, IBaseComponentProps {
    * 允许接收的事件列表
    */
   allowEvents?: string | string[];
-};
 
+  /**
+   * 需要给 iframe 发送的数据，可以被 JSON.stringify 的合法格式即可
+   */
+  data?: any;
+}
 
 export const DEFAULT_PROPS: IIFrameProps = {
   url: '',
@@ -85,7 +97,10 @@ export const DEFAULT_PROPS: IIFrameProps = {
   showFullScreenIcon: true,
   styles: {
     container: {},
-    icon: {}
+    icon: {},
+    iframe: {
+      backgroundColor: 'white'
+    }
   }
 };
 
@@ -94,13 +109,12 @@ export const DEFAULT_PROPS: IIFrameProps = {
  * @param subComponents - 子组件列表
  */
 export const IFrameHOC = (subComponents: ISubComponents) => {
-  const IFrameHOC = (props: IIFrameProps = DEFAULT_PROPS) => {
+  const IFrameHOC = (props: IIFrameProps) => {
     // const { SchemaTreeComponent } = subComponents;
     const mergedProps = Object.assign({}, DEFAULT_PROPS, props);
-    const { url, showFullScreenIcon, allowFullScreen, styles } = mergedProps;
-
-    const [isFull, setIsFull] = useState(false);
-
+    const { url, showFullScreenIcon, allowFullScreen, styles, data: iframeData } = mergedProps;
+    const [isFull, setIsFull] = useState(false); // 是否全屏
+    const [loaded, setLoaded] = useState(false); // iframe 是否已加载
     const refIframe = React.useRef(null);
 
     // 处理消息的 callback
@@ -162,6 +176,27 @@ export const IFrameHOC = (subComponents: ISubComponents) => {
       }
     }, []);
 
+    // 给 iframe 发送消息
+    const sendToFrame = useCallback((tag?: string) => {
+      if (refIframe && refIframe.current && !!iframeData) {
+        debugIO(`${!!tag ? `[${tag}]`: ''}向 iframe (url: ${url})发送消息，数据 %o`, iframeData);
+        // 对要传输的数据进行 stringify
+        refIframe.current.contentWindow.postMessage(
+          typeof iframeData === 'string' ? iframeData : JSON.stringify(iframeData),
+          '*'
+        );
+      }
+    }, [iframeData]);
+
+    // 当有 data 更新的时候 & iframe 已加载后，才给 iframe 发送消息
+    useEffect(() => {
+      debugComp('检测到 props.data 有变更，向 iframe 发送消息');
+      if (loaded) {
+        sendToFrame('in useEffect');
+      }
+    }, [iframeData]);
+
+
     useEffect(() => {
       window.addEventListener('message', handleFrameTasks);
       document.addEventListener('webkitfullscreenchange', fullscreenChange);
@@ -171,6 +206,8 @@ export const IFrameHOC = (subComponents: ISubComponents) => {
 
       (refIframe.current as any).onload = () => {
         const { onLoad } = props;
+        sendToFrame('in load'); // 加载完之后需要发送一次数据；
+        setLoaded(true);
         onLoad && onLoad();
       };
 
@@ -199,7 +236,6 @@ export const IFrameHOC = (subComponents: ISubComponents) => {
       styles.icon || {}
     );
 
-
     const iframeProp = {
       frameBorder: '0',
       src: url,
@@ -215,28 +251,23 @@ export const IFrameHOC = (subComponents: ISubComponents) => {
         // ref={this.root}
         className="ide-iframe-container"
       >
-        <iframe ref={refIframe} {...iframeProp} />
+        <iframe ref={refIframe} {...iframeProp} style={styles.iframe} />
         {showFullScreenIcon ? (
           isFull ? (
             <Icon style={iconStyle} type="shrink" />
           ) : (
-              <Icon
-                onClick={enterIntoFull}
-                style={iconStyle}
-                type="arrows-alt"
-              />
-            )
+            <Icon onClick={enterIntoFull} style={iconStyle} type="arrows-alt" />
+          )
         ) : null}
       </StyledContainer>
     );
   };
   IFrameHOC.displayName = 'IFrameHOC';
-  return observer(based(IFrameHOC));
+  return observer(based(IFrameHOC, DEFAULT_PROPS));
 };
 
 // 采用高阶组件方式生成普通的 IFrame 组件
-export const IFrame = IFrameHOC({
-});
+export const IFrame = IFrameHOC({});
 
 /* ----------------------------------------------------
     以下是专门配合 store 时的组件版本
@@ -248,31 +279,32 @@ export const IFrame = IFrameHOC({
  */
 export const IFrameAddStore = (storesEnv: IStoresEnv<IStoresModel>) => {
   const { stores } = storesEnv;
-  const IFrameHasSubStore = IFrameHOC({
-  });
+  const IFrameHasSubStore = IFrameHOC({});
 
-  const IFrameWithStore = (props: Omit<IIFrameProps, TIFrameControlledKeys>) => {
-    const {
-      ...otherProps } = props;
+  const IFrameWithStore = (
+    props: Omit<IIFrameProps, TIFrameControlledKeys>
+  ) => {
+    const { ...otherProps } = props;
     const { model } = stores;
     const controlledProps = pick(model, CONTROLLED_KEYS);
     debugRender(`[${stores.id}] rendering`);
+    debugger;
 
-    const otherPropsWithInjected = useIndectedEvents<IIFrameProps, IStoresModel>(storesEnv, otherProps, {
-      'onLoad': [showConsole]
+    const otherPropsWithInjected = useInjectedEvents<
+      IIFrameProps,
+      IStoresModel
+    >(storesEnv, otherProps, {
+      onLoad: [showConsole]
     });
 
     return (
-      <IFrameHasSubStore
-        {...controlledProps}
-        {...otherPropsWithInjected}
-      />
+      <IFrameHasSubStore {...controlledProps} {...otherPropsWithInjected} />
     );
   };
 
   IFrameWithStore.displayName = 'IFrameWithStore';
   return observer(IFrameWithStore);
-}
+};
 
 /**
  * 生成 env 对象，方便在不同的状态组件中传递上下文
@@ -286,7 +318,7 @@ export const IFrameStoresEnv = () => {
     client: app.client,
     innerApps: innerApps
   };
-}
+};
 
 /**
  * 工厂函数，每调用一次就获取一副 MVC
@@ -297,5 +329,5 @@ export const IFrameFactory = () => {
   return {
     ...storesEnv,
     IFrameWithStore: IFrameAddStore(storesEnv)
-  }
+  };
 };

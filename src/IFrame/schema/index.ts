@@ -31,6 +31,7 @@ export const CONTROLLED_KEYS: string[] = BASE_CONTROLLED_KEYS.concat([
   'allowFullScreen',
   'showFullScreenIcon',
   'url',
+  'data',
   'allowEvents'
 ]);
 
@@ -44,6 +45,7 @@ export const IFrameModel = BaseModel
     allowFullScreen: types.optional(types.boolean, true),
     showFullScreenIcon: types.optional(types.boolean, true),
     url: types.optional(types.string, ''),
+    data: types.optional(types.string, ''), // 要发送给 iframe 的 data
     allowEvents: types.array(types.string),
     // language: types.optional(
     //   types.enumeration('Type', CODE_LANGUAGES),
@@ -75,6 +77,9 @@ export const IFrameModel = BaseModel
       },
       setUrl(url: string) {
         self.url = url;
+      },
+      setData(data: string) {
+        self.data = typeof data === 'object' ? JSON.stringify(data) : data;
       },
       setAllowEvents(e: string | string[]) {
         self.allowEvents = [].concat(e) as typeof self.allowEvents;
