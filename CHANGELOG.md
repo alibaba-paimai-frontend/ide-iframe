@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.1.2](https://github.com/alibaba-paimai-frontend/ide-iframe/compare/v0.1.1...v0.1.2) (2019-04-30)
+
+
+### Features
+
+* **功能新增: 方法:** 新增 sendToFrame 方法，当数据变更的时候向 iframe 发送消息 ([9c279ea](https://github.com/alibaba-paimai-frontend/ide-iframe/commit/9c279ea))
+
+
+
 <a name="0.1.1"></a>
 ## 0.1.1 (2019-03-05)
 
