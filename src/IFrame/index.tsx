@@ -288,7 +288,6 @@ export const IFrameAddStore = (storesEnv: IStoresEnv<IStoresModel>) => {
     const { model } = stores;
     const controlledProps = pick(model, CONTROLLED_KEYS);
     debugRender(`[${stores.id}] rendering`);
-    debugger;
 
     const otherPropsWithInjected = useInjectedEvents<
       IIFrameProps,
