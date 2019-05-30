@@ -48,13 +48,18 @@ export interface IIFrameEvent {
   onLoad?: () => void;
 }
 
-export interface IIFrameStyles extends IBaseStyles {
-  container?: React.CSSProperties;
-  icon?: React.CSSProperties;
-}
+// export interface IIFrameStyles extends IBaseStyles {
+//   container?: React.CSSProperties;
+//   icon?: React.CSSProperties;
+// }
 
 export interface IIFrameTheme extends IBaseTheme {
   main: string;
+}
+
+export enum EDataType {
+  JSON = 'JSON',
+  STRING = 'STRING'
 }
 
 export interface IIFrameProps extends IIFrameEvent, IBaseComponentProps {
@@ -75,10 +80,6 @@ export interface IIFrameProps extends IIFrameEvent, IBaseComponentProps {
    */
   url?: string;
 
-  /**
-   * 样式集合，方便外部控制
-   */
-  styles?: IIFrameStyles;
 
   /**
    * 允许接收的事件列表
@@ -89,12 +90,18 @@ export interface IIFrameProps extends IIFrameEvent, IBaseComponentProps {
    * 需要给 iframe 发送的数据，可以被 JSON.stringify 的合法格式即可
    */
   data?: any;
+
+  /**
+   * 传输数据类型，可以以 JSON 或者 字符串的形式传递
+   */
+  dataType?: EDataType;
 }
 
 export const DEFAULT_PROPS: IIFrameProps = {
   url: '',
   allowFullScreen: false,
   showFullScreenIcon: true,
+  dataType: EDataType.STRING,
   styles: {
     container: {},
     icon: {},
@@ -112,28 +119,39 @@ export const IFrameHOC = (subComponents: ISubComponents) => {
   const IFrameHOC = (props: IIFrameProps) => {
     // const { SchemaTreeComponent } = subComponents;
     const mergedProps = Object.assign({}, DEFAULT_PROPS, props);
-    const { url, showFullScreenIcon, allowFullScreen, styles, data: iframeData } = mergedProps;
+    const {
+      url,
+      showFullScreenIcon,
+      allowFullScreen,
+      handleFrameTasks,
+      styles,
+      dataType,
+      allowEvents,
+      data: iframeData
+    } = mergedProps;
     const [isFull, setIsFull] = useState(false); // 是否全屏
     const [loaded, setLoaded] = useState(false); // iframe 是否已加载
     const refIframe = React.useRef(null);
 
     // 处理消息的 callback
-    const handleFrameTasks = useCallback((e: MessageEvent) => {
-      const {
-        handleFrameTasks, // 事件处理
-        allowEvents // 控制哪些域来的消息可以被处理
-      } = props;
-      let message = parseOrFalse(e.data) as IIFrameData;
-      const allows = [].concat(allowEvents);
-      if (
-        !!message &&
-        allows.length &&
-        handleFrameTasks &&
-        allows.includes(message.event)
-      ) {
-        handleFrameTasks(message);
-      }
-    }, []);
+    const handleFrameTasksCallback = useCallback(
+      (e: MessageEvent) => {
+        let message =
+          dataType === EDataType.STRING
+            ? (parseOrFalse(e.data) as IIFrameData)
+            : e.data;
+        const allows = [].concat(allowEvents);
+        if (
+          !!message &&
+          allows.length &&
+          handleFrameTasks &&
+          allows.includes(message.event)
+        ) {
+          handleFrameTasks(message);
+        }
+      },
+      [dataType, handleFrameTasks, allowEvents]
+    );
 
     // fullscreenChange 状态变更
     const fullscreenChange = useCallback(() => {
@@ -177,16 +195,25 @@ export const IFrameHOC = (subComponents: ISubComponents) => {
     }, []);
 
     // 给 iframe 发送消息
-    const sendToFrame = useCallback((tag?: string) => {
-      if (refIframe && refIframe.current && !!iframeData) {
-        debugIO(`${!!tag ? `[${tag}]`: ''}向 iframe (url: ${url})发送消息，数据 %o`, iframeData);
-        // 对要传输的数据进行 stringify
-        refIframe.current.contentWindow.postMessage(
-          typeof iframeData === 'string' ? iframeData : JSON.stringify(iframeData),
-          '*'
-        );
-      }
-    }, [iframeData]);
+    const sendToFrame = useCallback(
+      (tag?: string) => {
+        if (refIframe && refIframe.current && !!iframeData) {
+          const dataToPost =
+            dataType === EDataType.STRING
+              ? JSON.stringify(iframeData)
+              : iframeData;
+          debugIO(
+            `${
+              !!tag ? `[${tag}]` : ''
+            }向 iframe (url: ${url})发送消息，数据 %o`,
+            dataToPost
+          );
+          // 对要传输的数据进行 stringify
+          refIframe.current.contentWindow.postMessage(dataToPost, '*');
+        }
+      },
+      [iframeData, dataType]
+    );
 
     // 当有 data 更新的时候 & iframe 已加载后，才给 iframe 发送消息
     useEffect(() => {
@@ -196,9 +223,8 @@ export const IFrameHOC = (subComponents: ISubComponents) => {
       }
     }, [iframeData]);
 
-
     useEffect(() => {
-      window.addEventListener('message', handleFrameTasks);
+      window.addEventListener('message', handleFrameTasksCallback);
       document.addEventListener('webkitfullscreenchange', fullscreenChange);
       document.addEventListener('mozfullscreenchange', fullscreenChange);
       document.addEventListener('fullscreenchange', fullscreenChange);
@@ -212,7 +238,7 @@ export const IFrameHOC = (subComponents: ISubComponents) => {
       };
 
       return () => {
-        window.removeEventListener('message', handleFrameTasks);
+        window.removeEventListener('message', handleFrameTasksCallback);
         document.removeEventListener(
           'webkitfullscreenchange',
           fullscreenChange

@@ -19,7 +19,7 @@ const props: IIFrameProps = {
     type: 'updateSchema',
     data: schema
   },
-  url: 'http://localhost:9006/gourd2/pi/demo/index.html?from=ide'
+  url: 'http://www.baidu.com'
 };
 
 render(<IFrame {...props} onLoad={onLoad} />, document.getElementById(
@@ -29,14 +29,14 @@ render(<IFrame {...props} onLoad={onLoad} />, document.getElementById(
 // =============================
 
 const { IFrameWithStore, client } = IFrameFactory();
-render(<IFrameWithStore onLoad={onLoad} />, document.getElementById(
+render(<IFrameWithStore dataType={'JSON'} onLoad={onLoad} />, document.getElementById(
   'example-stores'
 ) as HTMLElement);
 
 // 更改地址
 client.put('/iframe', {
   name: 'url',
-  value: 'http://localhost:9006/gourd2/pi/demo/index.html?from=ide'
+  value: 'http://www.baidu.com'
 });
 
 setTimeout(() => {
@@ -50,4 +50,4 @@ setTimeout(() => {
     }
   });
 
-}, 2000);
+}, 3000);
