@@ -80,7 +80,6 @@ export interface IIFrameProps extends IIFrameEvent, IBaseComponentProps {
    */
   url?: string;
 
-
   /**
    * 允许接收的事件列表
    */
@@ -198,10 +197,19 @@ export const IFrameHOC = (subComponents: ISubComponents) => {
     const sendToFrame = useCallback(
       (tag?: string) => {
         if (refIframe && refIframe.current && !!iframeData) {
-          const dataToPost =
-            dataType === EDataType.STRING
-              ? JSON.stringify(iframeData)
-              : iframeData;
+          let dataToPost = iframeData;
+          if (dataType === EDataType.STRING) {
+            dataToPost =
+              typeof iframeData === 'string'
+                ? iframeData
+                : JSON.stringify(iframeData);
+          } else if (dataType === EDataType.JSON) {
+            dataToPost =
+              typeof iframeData === 'string'
+                ? JSON.parse(iframeData)
+                : iframeData;
+          }
+          
           debugIO(
             `${
               !!tag ? `[${tag}]` : ''
